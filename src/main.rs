@@ -2,6 +2,7 @@ use crate::local::LocalUdpSocket;
 use crate::upstream::UpstreamHttpsClient;
 use clap::Parser;
 
+mod bootstrap;
 mod cache;
 mod cli;
 mod error;
@@ -14,7 +15,7 @@ async fn main() {
 
     let upstream_address = args.upstream_address;
     let upstream_port = args.upstream_port;
-    let upstream_https_client = UpstreamHttpsClient::new(upstream_address, upstream_port);
+    let upstream_https_client = UpstreamHttpsClient::new(upstream_address, upstream_port).await;
 
     let local_address = args.local_address;
     let local_port = args.local_port;

@@ -38,7 +38,7 @@ impl Cache {
                 return;
             }
         };
-        let cache_key = CacheKey { query: query };
+        let cache_key = CacheKey { query };
 
         let ttl = match message.answers().iter().next() {
             Some(record) => Duration::from_secs(record.ttl().into()),
@@ -49,14 +49,14 @@ impl Cache {
         let cache_value = CacheValue {
             ttl,
             instant: Instant::now(),
-            message: message,
+            message,
         };
 
         let mut lru_cache = self.lru_cache.lock().unwrap();
         lru_cache.put(cache_key, cache_value);
     }
 
-    pub fn get(&mut self, message: Message) -> Option<Message> {
+    pub fn get(&mut self, message: &Message) -> Option<Message> {
         let mut lru_cache = self.lru_cache.lock().unwrap();
         if lru_cache.len() == 0 {
             return None;
@@ -69,8 +69,7 @@ impl Cache {
                 return None;
             }
         };
-        let cache_key = CacheKey { query: query };
-
+        let cache_key = CacheKey { query };
 
         let cache_value = match lru_cache.get(&cache_key) {
             Some(cache_value) => cache_value,

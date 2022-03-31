@@ -9,7 +9,7 @@ pub struct Args {
     #[clap(long, default_value = "53")]
     pub local_port: u16,
 
-    #[clap(long, default_value = "1.1.1.1")]
+    #[clap(long, default_value = "dns.google")]
     pub upstream_address: String,
 
     #[clap(long, default_value = "443")]
