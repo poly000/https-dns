@@ -13,10 +13,7 @@ impl LocalUdpSocket {
         let socket_addr = match format!("{}:{}", host, port).parse::<SocketAddr>() {
             Ok(socket_addr) => socket_addr,
             Err(_) => {
-                panic!(
-                    "[inbound][udp] Failed to parse the address {}:{}",
-                    host, port,
-                );
+                panic!("[local] failed to parse the address {}:{}", host, port,);
             }
         };
 
@@ -24,15 +21,9 @@ impl LocalUdpSocket {
             Ok(udp_socket) => Arc::new(udp_socket),
             Err(err) => {
                 if err.kind() == io::ErrorKind::AddrInUse {
-                    panic!(
-                        "[inbound][udp] The address {}:{} is already in use",
-                        host, port,
-                    )
+                    panic!("[local] the address {}:{} is already in use", host, port,)
                 } else {
-                    panic!(
-                        "[inbound][udp] Failed to bind to the address {}:{}",
-                        host, port,
-                    )
+                    panic!("[local] failed to bind to the address {}:{}", host, port,)
                 }
             }
         };
@@ -51,7 +42,7 @@ impl LocalUdpSocket {
             let (_, addr) = match udp_socket.recv_from(&mut buffer).await {
                 Ok(udp_recv_from_result) => udp_recv_from_result,
                 Err(_) => {
-                    println!("[udp][inbound] failed to receive the datagram message");
+                    println!("[local] failed to receive the datagram message");
                     continue;
                 }
             };
@@ -93,7 +84,7 @@ impl LocalUdpSocket {
         match udp_socket.send_to(&raw_response_message, &addr).await {
             Ok(_) => (),
             Err(_) => {
-                println!("[inbound][udp] failed to send the inbound response to the client");
+                println!("[local] failed to send the inbound response to the client");
             }
         };
     }

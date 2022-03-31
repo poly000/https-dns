@@ -91,3 +91,60 @@ impl Cache {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::Cache;
+    use std::net::Ipv4Addr;
+    use trust_dns_proto::{
+        op::{message::Message, Query},
+        rr::{Name, RData, Record, RecordType},
+    };
+
+    #[test]
+    fn test_cache_hit() {
+        let mut cache = Cache::new();
+        let mut query = Query::new();
+        let name = match "example.com".parse::<Name>() {
+            Ok(name) => name,
+            Err(_) => panic!("[test] failed to parse example.com"),
+        };
+        query.set_name(name.clone());
+
+        let mut answer = Record::with(name, RecordType::A, 1000);
+        answer.set_data(Some(RData::A(Ipv4Addr::new(1, 1, 1, 1))));
+
+        let mut response_message = Message::new();
+        response_message.add_query(query.clone());
+        response_message.add_answer(answer.clone());
+        cache.put(response_message);
+
+        let mut request_message = Message::new();
+        request_message.add_query(query.clone());
+        cache.get(&request_message).unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_cache_expire() {
+        let mut cache = Cache::new();
+        let mut query = Query::new();
+        let name = match "example.com".parse::<Name>() {
+            Ok(name) => name,
+            Err(_) => panic!("[test] failed to parse example.com"),
+        };
+        query.set_name(name.clone());
+
+        let mut answer = Record::with(name, RecordType::A, 0);
+        answer.set_data(Some(RData::A(Ipv4Addr::new(1, 1, 1, 1))));
+
+        let mut response_message = Message::new();
+        response_message.add_query(query.clone());
+        response_message.add_answer(answer.clone());
+        cache.put(response_message);
+
+        let mut request_message = Message::new();
+        request_message.add_query(query.clone());
+        cache.get(&request_message).unwrap();
+    }
+}

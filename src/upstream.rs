@@ -32,7 +32,7 @@ impl UpstreamHttpsClient {
             let bootstrap_https_client = BootstrapHttpsClient::new();
             let ip_addr = match bootstrap_https_client.bootstrap(host.clone()).await {
                 Ok(ip_addr) => ip_addr,
-                Err(_) => panic!("[upstream] failed to build the HTTPS client"),
+                Err(_) => panic!("[upstream] failed to bootstrap the DNS-over-HTTPS client"),
             };
             client_builder = client_builder.resolve(host.as_str(), ip_addr);
         }
@@ -87,5 +87,26 @@ impl UpstreamHttpsClient {
 
         self.cache.put(message.clone());
         Ok(message)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::BootstrapHttpsClient;
+    use std::net::{Ipv4Addr, SocketAddr};
+
+    #[tokio::test]
+    async fn test_bootstrap() {
+        let bootstrap_https_client = BootstrapHttpsClient::new();
+        let host = String::from("dns.google");
+        let ip_addr = match bootstrap_https_client.bootstrap(host).await {
+            Ok(ip_addr) => ip_addr,
+            Err(_) => panic!("[test] failed to bootstrap the DNS-over-HTTPS service"),
+        };
+        let expected_ip_addr = [
+            SocketAddr::new(Ipv4Addr::new(8, 8, 8, 8).into(), 0),
+            SocketAddr::new(Ipv4Addr::new(8, 8, 4, 4).into(), 0),
+        ];
+        assert!(expected_ip_addr.contains(&ip_addr));
     }
 }

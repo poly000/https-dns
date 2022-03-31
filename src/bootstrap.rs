@@ -3,8 +3,7 @@ use reqwest::{header, Client};
 use std::{net::SocketAddr, time::Duration};
 use trust_dns_proto::{
     op::{message::Message, Query},
-    rr::Name,
-    rr::RData,
+    rr::{Name, RData},
 };
 
 #[derive(Clone)]
@@ -29,7 +28,7 @@ impl BootstrapHttpsClient {
 
         let https_client = match client_builder.build() {
             Ok(https_client) => https_client,
-            Err(_) => panic!("[upstream] failed to build the HTTPS client"),
+            Err(_) => panic!("[bootstrap] failed to build the HTTPS client"),
         };
 
         BootstrapHttpsClient { https_client }
@@ -77,18 +76,39 @@ impl BootstrapHttpsClient {
 
         let record = match message.answers().iter().next() {
             Some(record) => record,
-            None => panic!("[outbound] failed to bootstrap the address {}", host),
+            None => panic!("[bootstrap] failed to bootstrap the address {}", host),
         };
 
         let record_data = match record.data() {
             Some(record_data) => record_data,
-            None => panic!("[outbound] failed to bootstrap the address {}", host),
+            None => panic!("[bootstrap] failed to bootstrap the address {}", host),
         };
 
         match record_data {
             RData::A(ipv4_address) => Ok(SocketAddr::new((*ipv4_address).into(), 0)),
             RData::AAAA(ipv6_address) => Ok(SocketAddr::new((*ipv6_address).into(), 0)),
-            _ => panic!("[outbound] failed to bootstrap the address {}", host),
+            _ => panic!("[bootstrap] failed to bootstrap the address {}", host),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::BootstrapHttpsClient;
+    use std::net::{Ipv4Addr, SocketAddr};
+
+    #[tokio::test]
+    async fn test_bootstrap() {
+        let bootstrap_https_client = BootstrapHttpsClient::new();
+        let host = String::from("dns.google");
+        let ip_addr = match bootstrap_https_client.bootstrap(host).await {
+            Ok(ip_addr) => ip_addr,
+            Err(_) => panic!("[test] failed to bootstrap the DNS-over-HTTPS service"),
+        };
+        let expected_ip_addr = [
+            SocketAddr::new(Ipv4Addr::new(8, 8, 8, 8).into(), 0),
+            SocketAddr::new(Ipv4Addr::new(8, 8, 4, 4).into(), 0),
+        ];
+        assert!(expected_ip_addr.contains(&ip_addr));
     }
 }
