@@ -1,9 +1,8 @@
 use crate::upstream::UpstreamHttpsClient;
 use std::{io, net::SocketAddr, sync::Arc};
 use tokio::net::UdpSocket;
-use trust_dns_client::op::Message;
+use trust_dns_proto::op::message::Message;
 
-#[derive(Debug)]
 pub struct LocalUdpSocket {
     udp_socket: Arc<UdpSocket>,
     upstream_https_client: UpstreamHttpsClient,
@@ -46,9 +45,9 @@ impl LocalUdpSocket {
 
     pub async fn listen(&self) {
         loop {
+            let mut buffer = [0; 512];
             let udp_socket = self.udp_socket.clone();
             let upstream_https_client = self.upstream_https_client.clone();
-            let mut buffer = [0; 512];
             let (_, addr) = match udp_socket.recv_from(&mut buffer).await {
                 Ok(udp_recv_from_result) => udp_recv_from_result,
                 Err(_) => {
@@ -64,7 +63,7 @@ impl LocalUdpSocket {
     }
 
     pub async fn process(
-        upstream_https_client: UpstreamHttpsClient,
+        mut upstream_https_client: UpstreamHttpsClient,
         udp_socket: Arc<UdpSocket>,
         addr: SocketAddr,
         buffer: &[u8; 512],

@@ -1,12 +1,15 @@
+use crate::cache::Cache;
 use crate::error::UpstreamError;
+use std::time::Duration;
 use reqwest::{header, Client};
-use trust_dns_client::op::Message;
+use trust_dns_proto::op::message::Message;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct UpstreamHttpsClient {
     host: String,
     port: u16,
     https_client: Client,
+    cache: Cache,
 }
 
 impl UpstreamHttpsClient {
@@ -22,6 +25,7 @@ impl UpstreamHttpsClient {
             .https_only(true)
             .gzip(true)
             .brotli(true)
+            .timeout(Duration::from_secs(1))
             .build()
         {
             Ok(https_client) => https_client,
@@ -34,10 +38,15 @@ impl UpstreamHttpsClient {
             host,
             port,
             https_client,
+            cache: Cache::new(),
         }
     }
 
-    pub async fn process(&self, request_message: Message) -> Result<Message, UpstreamError> {
+    pub async fn process(&mut self, request_message: Message) -> Result<Message, UpstreamError> {
+        if let Some(response_message) = self.cache.get(request_message.clone()) {
+            return Ok(response_message);
+        }
+
         let raw_request_message = match request_message.to_vec() {
             Ok(raw_request_message) => raw_request_message,
             Err(error) => {
@@ -68,6 +77,7 @@ impl UpstreamHttpsClient {
             }
         };
 
+        self.cache.put(message.clone());
         Ok(message)
     }
 }
