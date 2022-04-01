@@ -4,20 +4,26 @@
 
 [![Crates.io](https://img.shields.io/crates/v/https-dns?style=for-the-badge&logo=rust)](https://crates.io/crates/https-dns)
 [![Crates.io](https://img.shields.io/crates/d/https-dns?style=for-the-badge&logo=rust)](https://crates.io/crates/https-dns)
-[![GitHub Actions](https://img.shields.io/github/workflow/status/xiaoyang-sde/https-dns/rust-test-lint?style=for-the-badge&logo=github)](https://github.com/xiaoyang-sde/https-dns/actions)
+[![GitHub Actions](https://img.shields.io/github/workflow/status/xiaoyang-sde/https-dns/check-test-lint?style=for-the-badge&logo=github)](https://github.com/xiaoyang-sde/https-dns/actions)
 
 ## Installation
 
 ```cmd
-$ cargo install https-dns
+cargo install https-dns
 ```
 
 ## Usage
 
 ```cmd
-$ sudo cargo run -- -h
+$ sudo https-dns
+[upstream] connected to https://1.1.1.1:443
+[local] listening on 127.0.0.1:53
+```
 
-https-dns 0.1.0
+```cmd
+$ https-dns -h
+
+https-dns 0.1.1
 Minimal and efficient DNS-over-HTTPS (DoH) client
 
 USAGE:

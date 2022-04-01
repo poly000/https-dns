@@ -1,12 +1,13 @@
 [package]
 name = "https-dns"
 description = "Minimal and efficient DNS-over-HTTPS (DoH) client"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["Xiaoyang Liu <siujoeng.lau@gmail.com>"]
 readme = "README.md"
 repository = "https://github.com/xiaoyang-sde/https-dns"
 homepage = "https://github.com/xiaoyang-sde/https-dns"
+documentation = "https://docs.rs/https-dns"
 license = "MIT"
 keywords = ["cli", "dns"]
 categories = ["command-line-utilities"]
