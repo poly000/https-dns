@@ -92,6 +92,12 @@ impl Cache {
     }
 }
 
+impl Default for Cache {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::Cache;

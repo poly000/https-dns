@@ -19,16 +19,20 @@ impl LocalUdpSocket {
 
         let udp_socket = match UdpSocket::bind(socket_addr).await {
             Ok(udp_socket) => {
-                println!("[local] https-dns is running on {}:{}", host, port);
+                println!("[local] listening on {}:{}", host, port);
                 Arc::new(udp_socket)
             }
-            Err(err) => {
-                if err.kind() == io::ErrorKind::AddrInUse {
-                    panic!("[local] the address {}:{} is already in use", host, port,)
-                } else {
-                    panic!("[local] failed to bind to the address {}:{}", host, port,)
+            Err(error) => match error.kind() {
+                io::ErrorKind::PermissionDenied => {
+                    panic!(
+                        "[local] failed to bind to the address {}:{} (Permission denied)",
+                        host, port
+                    );
                 }
-            }
+                _ => {
+                    panic!("[local] failed to bind to the address {}:{}", host, port);
+                }
+            },
         };
 
         LocalUdpSocket {

@@ -92,6 +92,12 @@ impl BootstrapHttpsClient {
     }
 }
 
+impl Default for BootstrapHttpsClient {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::BootstrapHttpsClient;
