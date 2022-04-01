@@ -18,7 +18,10 @@ impl LocalUdpSocket {
         };
 
         let udp_socket = match UdpSocket::bind(socket_addr).await {
-            Ok(udp_socket) => Arc::new(udp_socket),
+            Ok(udp_socket) => {
+                println!("[local] https-dns is running on {}:{}", host, port);
+                Arc::new(udp_socket)
+            },
             Err(err) => {
                 if err.kind() == io::ErrorKind::AddrInUse {
                     panic!("[local] the address {}:{} is already in use", host, port,)

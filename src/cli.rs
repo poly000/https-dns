@@ -1,7 +1,7 @@
 use clap::Parser;
 
 #[derive(Parser, Debug)]
-#[clap(author, version, about)]
+#[clap(version, about)]
 pub struct Args {
     #[clap(short = 'l', long, default_value = "127.0.0.1")]
     pub local_address: String,

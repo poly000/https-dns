@@ -38,7 +38,10 @@ impl UpstreamHttpsClient {
         }
 
         let https_client = match client_builder.build() {
-            Ok(https_client) => https_client,
+            Ok(https_client) => {
+                println!("[upstream] connected to https://{}:{}", host, port);
+                https_client
+            },
             Err(_) => panic!("[upstream] failed to build the HTTPS client"),
         };
 
