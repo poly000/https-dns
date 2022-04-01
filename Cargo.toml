@@ -1,15 +1,20 @@
 [package]
 name = "https-dns"
+description = "Minimal and efficient DNS-over-HTTPS (DoH) client"
 version = "0.1.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+authors = ["Xiaoyang Liu <siujoeng.lau@gmail.com>"]
+readme = "README.md"
+repository = "https://github.com/xiaoyang-sde/https-dns"
+homepage = "https://github.com/xiaoyang-sde/https-dns"
+license = "MIT"
+keywords = ["cli", "dns"]
+categories = ["command-line-utilities"]
 
 [dependencies]
 tokio = { version = "1", features = ["rt", "net", "sync", "macros", "io-util"] }
 clap = { version = "3.1.6", features = ["derive"] }
 reqwest = { version = "0.11", features = ["json", "gzip", "brotli"] }
-url = "2.2.2"
 http = "0.2.6"
 lru = "0.7.3"
 trust-dns-proto = "0.21.2"

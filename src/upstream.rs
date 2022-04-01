@@ -41,7 +41,7 @@ impl UpstreamHttpsClient {
             Ok(https_client) => {
                 println!("[upstream] connected to https://{}:{}", host, port);
                 https_client
-            },
+            }
             Err(_) => panic!("[upstream] failed to build the HTTPS client"),
         };
 
