@@ -1,98 +1,90 @@
-use crate::upstream::UpstreamHttpsClient;
+use crate::error::LocalError::{self, InvalidAddress, PermissionDenied, Unknown};
+use crate::upstream::HttpsClient;
 use std::{io, net::SocketAddr, sync::Arc};
 use tokio::net::UdpSocket;
+use tracing::{info, instrument, warn};
 use trust_dns_proto::op::message::Message;
 
-pub struct LocalUdpSocket {
+#[derive(Debug)]
+pub struct UdpListener {
     udp_socket: Arc<UdpSocket>,
-    upstream_https_client: UpstreamHttpsClient,
+    https_client: HttpsClient,
 }
 
-impl LocalUdpSocket {
-    pub async fn new(host: String, port: u16, upstream_https_client: UpstreamHttpsClient) -> Self {
-        let socket_addr = match format!("{}:{}", host, port).parse::<SocketAddr>() {
+impl UdpListener {
+    #[instrument(skip(https_client))]
+    pub async fn new(
+        host: String,
+        port: u16,
+        https_client: HttpsClient,
+    ) -> Result<Self, LocalError> {
+        let socket_addr: SocketAddr = match format!("{}:{}", host, port).parse() {
             Ok(socket_addr) => socket_addr,
-            Err(_) => {
-                panic!("[local] failed to parse the address {}:{}", host, port,);
-            }
+            Err(_) => return Err(InvalidAddress(host, port)),
         };
 
         let udp_socket = match UdpSocket::bind(socket_addr).await {
-            Ok(udp_socket) => {
-                println!("[local] listening on {}:{}", host, port);
-                Arc::new(udp_socket)
-            }
+            Ok(udp_socket) => Arc::new(udp_socket),
             Err(error) => match error.kind() {
-                io::ErrorKind::PermissionDenied => {
-                    panic!(
-                        "[local] failed to bind to the address {}:{} (Permission denied)",
-                        host, port
-                    );
-                }
-                _ => {
-                    panic!("[local] failed to bind to the address {}:{}", host, port);
-                }
+                io::ErrorKind::PermissionDenied => return Err(PermissionDenied(host, port)),
+                _ => return Err(Unknown(host, port)),
             },
         };
+        info!("listened on {}:{}", host, port);
 
-        LocalUdpSocket {
+        Ok(UdpListener {
             udp_socket,
-            upstream_https_client,
-        }
+            https_client,
+        })
     }
 
+    #[instrument(skip(self))]
     pub async fn listen(&self) {
         loop {
             let mut buffer = [0; 512];
+            let mut https_client = self.https_client.clone();
             let udp_socket = self.udp_socket.clone();
-            let upstream_https_client = self.upstream_https_client.clone();
+
             let (_, addr) = match udp_socket.recv_from(&mut buffer).await {
                 Ok(udp_recv_from_result) => udp_recv_from_result,
                 Err(_) => {
-                    println!("[local] failed to receive the datagram message");
+                    warn!("failed to receive the datagram message");
                     continue;
                 }
             };
 
+            info!("received DNS request from {}", addr);
+
             tokio::spawn(async move {
-                LocalUdpSocket::process(upstream_https_client, udp_socket, addr, &buffer).await;
+                let request_message = match Message::from_vec(&buffer) {
+                    Ok(request_message) => request_message,
+                    Err(_) => {
+                        warn!("failed to parse the DNS request");
+                        return;
+                    }
+                };
+
+                let response_message = match https_client.process(request_message).await {
+                    Ok(response_message) => response_message,
+                    Err(error) => {
+                        warn!("{}", error);
+                        return;
+                    }
+                };
+
+                let raw_response_message = match response_message.to_vec() {
+                    Ok(raw_response_message) => raw_response_message,
+                    Err(_) => {
+                        warn!("failed to parse the DNS response");
+                        return;
+                    }
+                };
+
+                match udp_socket.send_to(&raw_response_message, &addr).await {
+                    Ok(_) => info!("sent DNS response to {}", addr),
+                    Err(_) => warn!("failed to send the inbound response to the client"),
+                };
             });
         }
-    }
-
-    pub async fn process(
-        mut upstream_https_client: UpstreamHttpsClient,
-        udp_socket: Arc<UdpSocket>,
-        addr: SocketAddr,
-        buffer: &[u8; 512],
-    ) {
-        let request_message = match Message::from_vec(buffer) {
-            Ok(request_message) => request_message,
-            Err(_) => {
-                return;
-            }
-        };
-
-        let response_message = match upstream_https_client.process(request_message).await {
-            Ok(response_message) => response_message,
-            Err(error) => {
-                println!("{}", error);
-                return;
-            }
-        };
-
-        let raw_response_message = match response_message.to_vec() {
-            Ok(raw_response_message) => raw_response_message,
-            Err(_) => {
-                return;
-            }
-        };
-
-        match udp_socket.send_to(&raw_response_message, &addr).await {
-            Ok(_) => (),
-            Err(_) => {
-                println!("[local] failed to send the inbound response to the client");
-            }
-        };
     }
 }

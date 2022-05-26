@@ -8,20 +8,20 @@ use std::{
 use trust_dns_proto::op::{message::Message, Query};
 
 #[derive(Debug, Hash, PartialEq, Eq)]
-struct CacheKey {
+struct Key {
     query: Query,
 }
 
 #[derive(Debug)]
-struct CacheValue {
+struct Value {
     message: Message,
     instant: Instant,
     ttl: Duration,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Cache {
-    lru_cache: Arc<Mutex<LruCache<CacheKey, CacheValue>>>,
+    lru_cache: Arc<Mutex<LruCache<Key, Value>>>,
 }
 
 impl Cache {
@@ -38,22 +38,22 @@ impl Cache {
                 return;
             }
         };
-        let cache_key = CacheKey { query };
+        let key = Key { query };
 
-        let ttl = match message.answers().iter().next() {
-            Some(record) => Duration::from_secs(record.ttl().into()),
-            None => {
-                return;
-            }
-        };
-        let cache_value = CacheValue {
-            ttl,
-            instant: Instant::now(),
-            message,
-        };
+        if let Some(min_record) = message
+            .answers()
+            .iter()
+            .min_by(|record_1, record_2| record_1.ttl().cmp(&record_2.ttl()))
+        {
+            let value = Value {
+                ttl: Duration::from_secs(min_record.ttl().into()),
+                instant: Instant::now(),
+                message,
+            };
 
-        let mut lru_cache = self.lru_cache.lock().unwrap();
-        lru_cache.put(cache_key, cache_value);
+            let mut lru_cache = self.lru_cache.lock().unwrap();
+            lru_cache.put(key, value);
+        };
     }
 
     pub fn get(&mut self, message: &Message) -> Option<Message> {
@@ -69,7 +69,7 @@ impl Cache {
                 return None;
             }
         };
-        let cache_key = CacheKey { query };
+        let cache_key = Key { query };
 
         let cache_value = match lru_cache.get(&cache_key) {
             Some(cache_value) => cache_value,

@@ -1,6 +1,9 @@
-use crate::local::LocalUdpSocket;
-use crate::upstream::UpstreamHttpsClient;
+use crate::cli::Args;
+use crate::local::UdpListener;
+use crate::upstream::HttpsClient;
 use clap::Parser;
+use std::process::exit;
+use tracing::error;
 
 mod bootstrap;
 mod cache;
@@ -11,16 +14,29 @@ mod upstream;
 
 #[tokio::main]
 async fn main() {
-    let args = cli::Args::parse();
+    tracing_subscriber::fmt().compact().init();
 
-    let upstream_address = args.upstream_address;
-    let upstream_port = args.upstream_port;
-    let upstream_https_client = UpstreamHttpsClient::new(upstream_address, upstream_port).await;
+    let Args {
+        upstream_address,
+        local_address,
+        local_port,
+        upstream_port,
+    } = cli::Args::parse();
 
-    let local_address = args.local_address;
-    let local_port = args.local_port;
-    let local_udp_socket =
-        LocalUdpSocket::new(local_address, local_port, upstream_https_client).await;
+    let https_client = match HttpsClient::new(upstream_address, upstream_port).await {
+        Ok(https_client) => https_client,
+        Err(error) => {
+            error!("{}", error);
+            exit(1);
+        }
+    };
 
-    local_udp_socket.listen().await;
+    let udp_listener = match UdpListener::new(local_address, local_port, https_client).await {
+        Ok(udp_listener) => udp_listener,
+        Err(error) => {
+            error!("{}", error);
+            exit(1);
+        }
+    };
+    udp_listener.listen().await;
 }

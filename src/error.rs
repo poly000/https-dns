@@ -1,47 +1,25 @@
-use reqwest::Error as HttpError;
-use std::{
-    fmt::{self, Display},
-    io::Error as IoError,
-};
-use trust_dns_proto::error::ProtoError;
+use thiserror::Error;
 
-#[derive(Debug)]
+#[derive(Error, Debug)]
+pub enum LocalError {
+    #[error("failed to parse the address {0}:{1}")]
+    InvalidAddress(String, u16),
+
+    #[error("failed to bind to the address {0}:{1} (Permission denied)")]
+    PermissionDenied(String, u16),
+
+    #[error("failed to bind to the address {0}:{1} (Permission denied)")]
+    Unknown(String, u16),
+}
+
+#[derive(Error, Debug)]
 pub enum UpstreamError {
-    Io(IoError),
-    Proto(ProtoError),
-    Http(HttpError),
-}
+    #[error("failed to build the HTTPS client")]
+    Build,
 
-impl Display for UpstreamError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            UpstreamError::Io(ref cause) => {
-                write!(f, "[upstream] {}", cause)
-            }
-            UpstreamError::Proto(ref cause) => {
-                write!(f, "[upstream] {}", cause)
-            }
-            UpstreamError::Http(ref cause) => {
-                write!(f, "[upstream] {}", cause)
-            }
-        }
-    }
-}
+    #[error("failed to bootstrap the address {0}")]
+    Bootstrap(String),
 
-impl From<IoError> for UpstreamError {
-    fn from(cause: IoError) -> UpstreamError {
-        UpstreamError::Io(cause)
-    }
-}
-
-impl From<ProtoError> for UpstreamError {
-    fn from(cause: ProtoError) -> UpstreamError {
-        UpstreamError::Proto(cause)
-    }
-}
-
-impl From<HttpError> for UpstreamError {
-    fn from(cause: HttpError) -> UpstreamError {
-        UpstreamError::Http(cause)
-    }
+    #[error("failed to resolve the DNS request")]
+    Resolve,
 }
