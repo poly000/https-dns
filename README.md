@@ -8,22 +8,29 @@
 
 ## Installation
 
-```cmd
+```shell
 cargo install https-dns
 ```
 
 ## Usage
 
-```cmd
-$ sudo https-dns
-[upstream] connected to https://1.1.1.1:443
-[local] listening on 127.0.0.1:53
+```shell
+# udp://localhost:53 -> https://1.1.1.1 (default)
+sudo https-dns
+
+# udp://localhost:53 -> https://cloudflare-dns.com
+sudo https-dns --upstream-address cloudflare-dns.com
+
+# udp://localhost:10053 -> https://dns.google
+sudo https-dns --local-port 10053 --upstream-address dns.google
 ```
 
-```cmd
-$ https-dns -h
+### CLI Reference
 
-https-dns 0.1.1
+```shell
+$ https-dns --help
+
+https-dns 0.2.0
 Minimal and efficient DNS-over-HTTPS (DoH) client
 
 USAGE:
@@ -31,9 +38,9 @@ USAGE:
 
 OPTIONS:
     -h, --help                                   Print help information
-    -l, --local-address <LOCAL_ADDRESS>          [default: 127.0.0.1]
-    -o, --upstream-port <UPSTREAM_PORT>          [default: 443]
-    -p, --local-port <LOCAL_PORT>                [default: 53]
-    -u, --upstream-address <UPSTREAM_ADDRESS>    [default: 1.1.1.1]
+        --local-address <LOCAL_ADDRESS>          [default: 127.0.0.1]
+        --local-port <LOCAL_PORT>                [default: 53]
+        --upstream-address <UPSTREAM_ADDRESS>    [default: 1.1.1.1]
+        --upstream-port <UPSTREAM_PORT>          [default: 443]
     -V, --version                                Print version information
 ```
