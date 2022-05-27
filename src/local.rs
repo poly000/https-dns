@@ -2,7 +2,7 @@ use crate::error::LocalError::{self, InvalidAddress, PermissionDenied, Unknown};
 use crate::upstream::HttpsClient;
 use std::{io, net::SocketAddr, sync::Arc};
 use tokio::net::UdpSocket;
-use tracing::{info, info_span, warn, Instrument, instrument};
+use tracing::{info, info_span, instrument, warn, Instrument};
 use trust_dns_proto::op::message::Message;
 
 #[derive(Debug)]
@@ -64,7 +64,7 @@ impl UdpListener {
 
                     for request_record in request_message.queries().iter() {
                         info!(
-                            phase="request",
+                            phase = "request",
                             "{} {} {}",
                             request_record.name(),
                             request_record.query_class(),
@@ -81,7 +81,7 @@ impl UdpListener {
                     };
 
                     for response_record in response_message.answers().iter() {
-                        info!(phase="response", "{}", response_record);
+                        info!(phase = "response", "{}", response_record);
                     }
 
                     let raw_response_message = match response_message.to_vec() {

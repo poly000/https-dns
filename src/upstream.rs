@@ -2,7 +2,7 @@ use crate::bootstrap::BootstrapClient;
 use crate::cache::Cache;
 use crate::error::UpstreamError::{self, Bootstrap, Build, Resolve};
 use reqwest::{
-    header::{CONTENT_TYPE, HeaderMap, HeaderValue},
+    header::{HeaderMap, HeaderValue, CONTENT_TYPE},
     Client,
 };
 use std::{net::IpAddr, time::Duration};
