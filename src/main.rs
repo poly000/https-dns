@@ -2,7 +2,7 @@ use crate::cli::Args;
 use crate::local::UdpListener;
 use crate::upstream::HttpsClient;
 use clap::Parser;
-use std::process::exit;
+use std::process::ExitCode;
 use tracing::error;
 
 mod bootstrap;
@@ -13,8 +13,8 @@ mod local;
 mod upstream;
 
 #[tokio::main]
-async fn main() {
-    tracing_subscriber::fmt().compact().init();
+async fn main() -> ExitCode {
+    tracing_subscriber::fmt().with_target(false).init();
 
     let Args {
         upstream_address,
@@ -27,7 +27,7 @@ async fn main() {
         Ok(https_client) => https_client,
         Err(error) => {
             error!("{}", error);
-            exit(1);
+            return ExitCode::FAILURE;
         }
     };
 
@@ -35,8 +35,9 @@ async fn main() {
         Ok(udp_listener) => udp_listener,
         Err(error) => {
             error!("{}", error);
-            exit(1);
+            return ExitCode::FAILURE;
         }
     };
     udp_listener.listen().await;
+    ExitCode::SUCCESS
 }

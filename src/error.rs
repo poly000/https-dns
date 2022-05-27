@@ -8,7 +8,7 @@ pub enum LocalError {
     #[error("failed to bind to the address {0}:{1} (Permission denied)")]
     PermissionDenied(String, u16),
 
-    #[error("failed to bind to the address {0}:{1} (Permission denied)")]
+    #[error("failed to bind to the address {0}:{1}")]
     Unknown(String, u16),
 }
 

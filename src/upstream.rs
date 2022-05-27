@@ -2,7 +2,7 @@ use crate::bootstrap::BootstrapClient;
 use crate::cache::Cache;
 use crate::error::UpstreamError::{self, Bootstrap, Build, Resolve};
 use reqwest::{
-    header::{HeaderMap, HeaderValue},
+    header::{CONTENT_TYPE, HeaderMap, HeaderValue},
     Client,
 };
 use std::{net::IpAddr, time::Duration};
@@ -18,11 +18,11 @@ pub struct HttpsClient {
 }
 
 impl HttpsClient {
-    #[instrument]
+    #[instrument(name = "main", skip_all)]
     pub async fn new(host: String, port: u16) -> Result<Self, UpstreamError> {
         let mut headers = HeaderMap::new();
         headers.insert(
-            "Content-Type",
+            CONTENT_TYPE,
             HeaderValue::from_str("application/dns-message").unwrap(),
         );
 
@@ -59,7 +59,6 @@ impl HttpsClient {
         })
     }
 
-    #[instrument(skip(self, request_message))]
     pub async fn process(&mut self, request_message: Message) -> Result<Message, UpstreamError> {
         if let Some(response_message) = self.cache.get(&request_message) {
             return Ok(response_message);

@@ -12,6 +12,9 @@ license = "MIT"
 keywords = ["cli", "dns"]
 categories = ["command-line-utilities"]
 
+[profile.release]
+lto = "thin"
+
 [dependencies]
 tokio = { version = "1.18.2", features = ["rt", "net", "sync", "macros", "io-util"] }
 clap = { version = "3.1.6", features = ["derive"] }

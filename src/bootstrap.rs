@@ -1,9 +1,11 @@
 use crate::error::UpstreamError::{self, Bootstrap, Build};
+use http::header::CONTENT_TYPE;
 use reqwest::{
     header::{HeaderMap, HeaderValue},
     Client,
 };
 use std::{net::SocketAddr, time::Duration};
+
 use trust_dns_proto::{
     op::{message::Message, Query},
     rr::{Name, RData},
@@ -18,7 +20,7 @@ impl BootstrapClient {
     pub fn new() -> Result<Self, UpstreamError> {
         let mut headers = HeaderMap::new();
         headers.insert(
-            "Content-Type",
+            CONTENT_TYPE,
             HeaderValue::from_str("application/dns-message").unwrap(),
         );
 
@@ -69,11 +71,11 @@ impl BootstrapClient {
             Err(_) => return Err(Bootstrap(host.to_string())),
         };
 
-        let record = match message.answers().iter().next() {
-            Some(record) => record,
-            None => return Err(Bootstrap(host.to_string())),
-        };
+        if message.answer_count() == 0 {
+            return Err(Bootstrap(host.to_string()));
+        }
 
+        let record = &message.answers()[0];
         let record_data = match record.data() {
             Some(record_data) => record_data,
             None => return Err(Bootstrap(host.to_string())),
