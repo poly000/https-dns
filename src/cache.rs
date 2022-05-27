@@ -32,12 +32,11 @@ impl Cache {
     }
 
     pub fn put(&mut self, message: Message) {
-        let query = match message.queries().iter().next() {
-            Some(query) => query.to_owned(),
-            None => {
-                return;
-            }
-        };
+        if message.queries().is_empty() {
+            return;
+        }
+
+        let query = message.queries()[0].clone();
         let key = Key { query };
 
         if let Some(min_record) = message
@@ -58,17 +57,12 @@ impl Cache {
 
     pub fn get(&mut self, message: &Message) -> Option<Message> {
         let mut lru_cache = self.lru_cache.lock().unwrap();
-        if lru_cache.len() == 0 {
+        if lru_cache.len() == 0 || message.queries().is_empty() {
             return None;
         }
 
         let message_id = message.id();
-        let query = match message.queries().iter().next() {
-            Some(query) => query.to_owned(),
-            None => {
-                return None;
-            }
-        };
+        let query = message.queries()[0].clone();
         let cache_key = Key { query };
 
         let cache_value = match lru_cache.get(&cache_key) {
@@ -111,10 +105,7 @@ mod tests {
     fn test_cache_hit() {
         let mut cache = Cache::new();
         let mut query = Query::new();
-        let name = match "example.com".parse::<Name>() {
-            Ok(name) => name,
-            Err(_) => panic!("[test] failed to parse example.com"),
-        };
+        let name: Name = "example.com".parse().unwrap();
         query.set_name(name.clone());
 
         let mut answer = Record::with(name, RecordType::A, 1000);
@@ -122,12 +113,12 @@ mod tests {
 
         let mut response_message = Message::new();
         response_message.add_query(query.clone());
-        response_message.add_answer(answer.clone());
+        response_message.add_answer(answer);
         cache.put(response_message);
 
         let mut request_message = Message::new();
-        request_message.add_query(query.clone());
-        cache.get(&request_message).unwrap();
+        let request_message = request_message.add_query(query);
+        cache.get(request_message).unwrap();
     }
 
     #[test]
@@ -135,10 +126,7 @@ mod tests {
     fn test_cache_expire() {
         let mut cache = Cache::new();
         let mut query = Query::new();
-        let name = match "example.com".parse::<Name>() {
-            Ok(name) => name,
-            Err(_) => panic!("[test] failed to parse example.com"),
-        };
+        let name: Name = "example.com".parse().unwrap();
         query.set_name(name.clone());
 
         let mut answer = Record::with(name, RecordType::A, 0);
@@ -146,11 +134,11 @@ mod tests {
 
         let mut response_message = Message::new();
         response_message.add_query(query.clone());
-        response_message.add_answer(answer.clone());
+        response_message.add_answer(answer);
         cache.put(response_message);
 
         let mut request_message = Message::new();
-        request_message.add_query(query.clone());
+        request_message.add_query(query);
         cache.get(&request_message).unwrap();
     }
 }

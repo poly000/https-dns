@@ -17,8 +17,8 @@ pub enum UpstreamError {
     #[error("failed to build the HTTPS client")]
     Build,
 
-    #[error("failed to bootstrap the address {0}")]
-    Bootstrap(String),
+    #[error("failed to bootstrap the address {0}: {1}")]
+    Bootstrap(String, String),
 
     #[error("failed to resolve the DNS request")]
     Resolve,

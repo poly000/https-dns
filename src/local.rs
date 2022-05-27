@@ -2,7 +2,7 @@ use crate::error::LocalError::{self, InvalidAddress, PermissionDenied, Unknown};
 use crate::upstream::HttpsClient;
 use std::{io, net::SocketAddr, sync::Arc};
 use tokio::net::UdpSocket;
-use tracing::{info, info_span, instrument, warn, Instrument};
+use tracing::{info, info_span, warn, Instrument};
 use trust_dns_proto::op::message::Message;
 
 #[derive(Debug)]
@@ -12,7 +12,6 @@ pub struct UdpListener {
 }
 
 impl UdpListener {
-    #[instrument(name = "main", skip_all)]
     pub async fn new(
         host: String,
         port: u16,
@@ -40,7 +39,7 @@ impl UdpListener {
 
     pub async fn listen(&self) {
         loop {
-            let mut buffer = [0; 512];
+            let mut buffer = [0; 4096];
             let mut https_client = self.https_client.clone();
             let udp_socket = self.udp_socket.clone();
 

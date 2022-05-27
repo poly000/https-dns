@@ -1,12 +1,12 @@
 use crate::bootstrap::BootstrapClient;
 use crate::cache::Cache;
-use crate::error::UpstreamError::{self, Bootstrap, Build, Resolve};
+use crate::error::UpstreamError::{self, Build, Resolve};
 use reqwest::{
     header::{HeaderMap, HeaderValue, CONTENT_TYPE},
     Client,
 };
 use std::{net::IpAddr, time::Duration};
-use tracing::{info, instrument};
+use tracing::info;
 use trust_dns_proto::op::message::Message;
 
 #[derive(Clone, Debug)]
@@ -18,7 +18,6 @@ pub struct HttpsClient {
 }
 
 impl HttpsClient {
-    #[instrument(name = "main", skip_all)]
     pub async fn new(host: String, port: u16) -> Result<Self, UpstreamError> {
         let mut headers = HeaderMap::new();
         headers.insert(
@@ -40,7 +39,7 @@ impl HttpsClient {
             };
             let ip_addr = match bootstrap_client.bootstrap(&host).await {
                 Ok(ip_addr) => ip_addr,
-                Err(_) => return Err(Bootstrap(host)),
+                Err(error) => return Err(error),
             };
             client_builder = client_builder.resolve(&host, ip_addr);
         }

@@ -11,6 +11,7 @@ mod cli;
 mod error;
 mod local;
 mod upstream;
+mod utils;
 
 #[tokio::main]
 async fn main() -> ExitCode {
