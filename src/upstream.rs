@@ -1,5 +1,4 @@
 use crate::bootstrap::BootstrapClient;
-use crate::cache::Cache;
 use crate::error::UpstreamError::{self, Build, Resolve};
 use reqwest::{
     header::{HeaderMap, HeaderValue, CONTENT_TYPE},
@@ -14,7 +13,6 @@ pub struct HttpsClient {
     host: String,
     port: u16,
     https_client: Client,
-    cache: Cache,
 }
 
 impl HttpsClient {
@@ -54,14 +52,10 @@ impl HttpsClient {
             host,
             port,
             https_client,
-            cache: Cache::new(),
         })
     }
 
     pub async fn process(&mut self, request_message: Message) -> Result<Message, UpstreamError> {
-        if let Some(response_message) = self.cache.get(&request_message) {
-            return Ok(response_message);
-        }
 
         let raw_request_message = match request_message.to_vec() {
             Ok(raw_request_message) => raw_request_message,
@@ -85,7 +79,6 @@ impl HttpsClient {
             Err(_) => return Err(Resolve),
         };
 
-        self.cache.put(message.clone());
         Ok(message)
     }
 }
